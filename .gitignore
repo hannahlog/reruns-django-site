@@ -1,0 +1,17 @@
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
+
+# Ignore sqlite database
+db.sqlite3
+
+# Ignore static files
+static/
+
+# Ignore pycache
+__pycache__
+*.pyc
+
+# Ignore virtual environment
+eb-virt/
