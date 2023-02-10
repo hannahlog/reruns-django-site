@@ -1,9 +1,0 @@
-{% if latest_feeds_list %}
-    <ul>
-    {% for feed in latest_feeds_list %}
-        <li><a href="{% url 'reruns:detail' feed.id %}">{{ feed.source_title }}</a></li>
-    {% endfor %}
-    </ul>
-{% else %}
-    <p>No feeds are available.</p>
-{% endif %}

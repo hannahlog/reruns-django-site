@@ -1,17 +1,45 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework import routers
 from . import views
 
-app_name = "reruns"
+# app_name = "reruns"
 
+
+    # path("snippets/", views.SnippetList.as_view(), name="snippet-list"),
+    # path("snippets/<int:pk>/", views.SnippetDetail.as_view(), name="snippet-detail"),
+    # path(
+    #     "snippets/<int:pk>/highlight/",
+    #     views.SnippetHighlight.as_view(),
+    #     name="snippet-highlight",
+    # ),  # new
+    # path("users/", views.UserList.as_view(), name="user-list"),
+    # path("users/<int:pk>/", views.UserDetail.as_view(), name="user-detail"),
+    # path("", views.api_root),
+
+
+# Create a router and register our viewsets with it.
+router = routers.DefaultRouter()
+router.register(r'feeds', views.RerunsFeedViewSet,basename="feed")
+router.register(r'users', views.UserViewSet,basename="user")
+
+# The API URLs are now determined automatically by the router.
 urlpatterns = [
-    path('', views.index, name='index'),
-    path('user/', views.feed_by_user, name='feed_by_user'),
-    path('add/', views.add, name='add'),
-    path('<int:feed_id>/', views.detail, name='detail'),
-    path('<int:feed_id>/edit/', views.edit, name='edit'),
-    path('<int:feed_id>/delete/', views.delete, name='delete'),
-
+    path('', include(router.urls)),
 ]
+
+
+# urlpatterns = [
+#     #path('reruns/', views.feed_list),
+#     #path('reruns/<int:pk>/', views.feed_detail),
+#     path('', views.api_root),
+#     #path('user/', views.feed_by_user, name='feed_by_user'),
+#     #path('add/', views.add, name='add'),
+#     #path('<int:feed_id>/', views.detail, name='detail'),
+#     #path('<int:feed_id>/edit/', views.edit, name='edit'),
+#     #path('<int:feed_id>/delete/', views.delete, name='delete'),
+#     path('users/', views.UserList.as_view()),
+#     path('users/<int:pk>/', views.UserDetail.as_view()),
+# ]
 
 # urlpatterns = [
 #     # ex: /polls/
