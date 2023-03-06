@@ -21,6 +21,14 @@ celery==5.2.7
     # via
     #   -r requirements.in
     #   django-celery-beat
+certifi==2022.12.7
+    # via
+    #   requests
+    #   rssreruns
+charset-normalizer==3.0.1
+    # via
+    #   requests
+    #   rssreruns
 click==8.1.3
     # via
     #   celery
@@ -37,12 +45,23 @@ django==4.1
     # via
     #   -r requirements.in
     #   django-celery-beat
+    #   django-invitations
 django-celery-beat==2.4.0
     # via -r requirements.in
+django-invitations==2.0.0
+    # via -r requirements.in
 django-timezone-field==5.0
-    # via django-celery-beat
+    # via
+    #   -r requirements.in
+    #   django-celery-beat
+idna==3.4
+    # via
+    #   requests
+    #   rssreruns
 kombu==5.2.4
     # via celery
+lxml==4.9.2
+    # via rssreruns
 prompt-toolkit==3.0.36
     # via click-repl
 psycopg2-binary==2.9.5
@@ -50,23 +69,34 @@ psycopg2-binary==2.9.5
 python-crontab==2.7.1
     # via django-celery-beat
 python-dateutil==2.8.2
-    # via python-crontab
+    # via
+    #   python-crontab
+    #   rssreruns
 pytz==2022.7.1
     # via
     #   celery
     #   django-timezone-field
 redis==4.4.2
     # via -r requirements.in
-six==1.14.0
+requests==2.28.2
+    # via rssreruns
+rssreruns==0.0.4
+    # via -r requirements.in
+six==1.16.0
     # via
     #   click-repl
     #   python-dateutil
+    #   rssreruns
 sqlparse==0.4.3
     # via django
 supervisor==4.2.5
     # via -r requirements.in
 tzdata==2022.7
     # via django-celery-beat
+urllib3==1.26.14
+    # via
+    #   requests
+    #   rssreruns
 vine==5.0.0
     # via
     #   amqp

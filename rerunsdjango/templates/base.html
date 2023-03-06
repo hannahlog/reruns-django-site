@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <link rel="stylesheet" type="text/css" href="{% static 'css/base.css' %}">
+    <title>RSS Reruns | {% block title %}{% endblock %}</title>
+</head>
+<body>
+    <div id="navbar">
+        {% block navbar %}
+            Navigation: <a href="{% url 'reruns:index' %}">Reruns Feeds</a> |
+            <a href="{% url 'accounts:users' %}">Accounts</a> |
+            {% if user.is_authenticated %}
+                <a href="{% url 'accounts:detail' user.pk %}">{{ user.username }}</a> |
+                <a href="{% url 'accounts:edit' user.pk %}">Settings</a> |
+                <a href="{% url 'reruns:feeds_by_user' user.pk %}">My Feeds</a>
+            {% else %}
+                <a href="{% url 'accounts:login' %}">Login</a>
+            {% endif %}
+        {% endblock %}
+    </div>
+    <div id="content">
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>

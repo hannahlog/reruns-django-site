@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}User: {{object.username}}{% endblock %}
+
+{% block content %}
+	<h2>User: {{object.username}}</h2>
+	Timezone: {{ object.timezone }}
+	<br />
+	<a href="{% url 'reruns:feeds_by_user' object.pk %}">Feeds by {{user.username}}</a>
+{% endblock %}

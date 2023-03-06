@@ -4,13 +4,13 @@ from . import views
 app_name = "reruns"
 
 urlpatterns = [
-    path('', views.index, name='index'),
-    path('user/', views.feed_by_user, name='feed_by_user'),
-    path('add/', views.add, name='add'),
-    path('<int:feed_id>/', views.detail, name='detail'),
-    path('<int:feed_id>/edit/', views.edit, name='edit'),
-    path('<int:feed_id>/delete/', views.delete, name='delete'),
-
+    path('', views.IndexView.as_view(), name='index'),
+    path('by-user/<int:pk>', views.UserFeedsList.as_view(), name='feeds_by_user'),
+    path('add/', views.CreateView.as_view(), name='create'),
+    path('<int:pk>/', views.DetailView.as_view(), name='detail'),
+    path('<int:pk>/edit/', views.UpdateView.as_view(), name='edit'),
+    path('<int:pk>/delete/', views.DeleteView.as_view(), name='delete'),
+    path('<int:pk>/feed.xml', views.feed, name='feed'),
 ]
 
 # urlpatterns = [

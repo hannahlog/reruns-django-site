@@ -1,9 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Latest Reruns Feeds{% endblock %}
+
+{% block content %}
+<h2>Latest Reruns Feeds</h2>
 {% if latest_feeds_list %}
-    <ul>
+    <!-- <ul> --><table>
+    <tr>
+    <th>Person 1</th>
+    <th>Person 2</th>
+    <th>Person 3</th>
+    </tr>
     {% for feed in latest_feeds_list %}
-        <li><a href="{% url 'reruns:detail' feed.id %}">{{ feed.source_title }}</a></li>
+        {% include "./detail_snippet_short.html" %}
     {% endfor %}
-    </ul>
+    </table>
 {% else %}
     <p>No feeds are available.</p>
 {% endif %}
+{% endblock %}

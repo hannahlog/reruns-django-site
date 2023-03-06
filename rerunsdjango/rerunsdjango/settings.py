@@ -33,7 +33,14 @@ SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["rerunsdjango-env.eba-avqmmggs.us-east-1.elasticbeanstalk.com"]
+ALLOWED_HOSTS = [
+    "rerunsdjango-env.eba-avqmmggs.us-east-1.elasticbeanstalk.com",
+    "127.0.0.1", # TESTING ONLY
+]
+
+INTERNAL_IPS = [
+    "127.0.0.1",
+]
 
 
 # Application definition
@@ -46,6 +53,11 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django_celery_beat",
+    "debug_toolbar",
+    "django.contrib.sites", # required for invitations
+    "invitations",
+    "reruns",
+    "accounts",
 ]
 #     "django_celery_beat",
 
@@ -57,6 +69,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "debug_toolbar.middleware.DebugToolbarMiddleware",
 ]
 
 ROOT_URLCONF = "rerunsdjango.urls"
@@ -64,7 +77,7 @@ ROOT_URLCONF = "rerunsdjango.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [os.path.join(BASE_DIR, 'templates')],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -129,7 +142,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = "US/Eastern"
 
 USE_I18N = True
 
@@ -139,7 +152,11 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 STATIC_URL = 'static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATIC_ROOT = os.path.join(BASE_DIR, 'assets')
+STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, "static"),
+)
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
@@ -167,3 +184,15 @@ CELERY_RESULT_BACKEND = "redis://localhost:6379"
 # Schedules will be stored in Django's own backend and show up nicely in /admin
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 
+# For django-invitations:
+# https://django-invitations.readthedocs.io/en/latest/installation.html
+SITE_ID = 1
+
+LOGIN_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "/"
+
+AUTH_USER_MODEL = "accounts.CustomUser"
+
+# TODO: actually make it possible to send email
+# https://docs.djangoproject.com/en/4.0/topics/email/
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
