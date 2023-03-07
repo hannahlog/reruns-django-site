@@ -34,7 +34,7 @@ SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    "rerunsdjango-env.eba-avqmmggs.us-east-1.elasticbeanstalk.com",
+    "reruns-django-env.eba-kzy9sugh.us-east-1.elasticbeanstalk.com",
     "127.0.0.1", # TESTING ONLY
 ]
 
@@ -59,7 +59,6 @@ INSTALLED_APPS = [
     "reruns",
     "accounts",
 ]
-#     "django_celery_beat",
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -149,6 +148,14 @@ USE_I18N = True
 USE_TZ = True
 
 
+# Default format for inputting datetimes
+# (Leave out seconds, celery beat isn't that precise anyway)
+
+DATETIME_INPUT_FORMATS = [
+    "%Y-%m-%d %H:%M"
+]
+
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 STATIC_URL = 'static/'
@@ -186,7 +193,10 @@ CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 
 # For django-invitations:
 # https://django-invitations.readthedocs.io/en/latest/installation.html
-SITE_ID = 1
+if 'RDS_DB_NAME' in os.environ:
+    SITE_ID = 2
+else:
+    SITE_ID = 1
 
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"

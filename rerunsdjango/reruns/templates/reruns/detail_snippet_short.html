@@ -1,9 +1,0 @@
-<tr>
-    <td><a href="{{ feed.source_url }}">Source Url</a></td>
-    <td>Created: {{ feed.creation_date }}</td>
-    <td>Last updated: {{ feed.last_updated }}</td>
-    <td>Owner: {{ feed.owner }}</td>
-    <td><a href="{% url 'reruns:detail' feed.id %}">Detail</a></td>
-    <td><a href="{% url 'reruns:edit' feed.id %}">Edit</a></td>
-    <td><a href="{% url 'reruns:delete' feed.id %}">Delete</a></td>
-</tr>

@@ -1,0 +1,50 @@
+{% load reruns_filters %}
+{% load tz %}
+{% if feeds %}
+    <p>All datetimes displayed below are in the timezone
+        {% get_current_timezone as TIME_ZONE %}{{ TIME_ZONE }}. 
+        To set a different timezone, please 
+        {% if not user.is_authenticated %}
+            <a href="{% url 'accounts:login' %}">log in</a> and 
+        {% endif %}
+            adjust the timezone in your 
+        {% if user.is_authenticated %}
+            <a href="{% url 'accounts:edit' user.pk %}">account settings</a>.
+        {% else %}
+            account settings.
+        {% endif %}
+    </p>
+    <p>Datetimes with no year shown are in the current year ({% now "Y" %}).</p>
+    <table class="feed-list">
+        <thead>
+            <tr>
+                {% for field in fields %}
+                    <th>
+                        <a href="?order_by={{field}}">
+                        {{ field|verbose:meta }}
+                        </a>
+                    </th>
+                {% endfor %}
+                <th>Detail</th>
+                <th>Edit</th>
+                <th>Delete</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for feed in feeds %}
+                <tr>
+                    {% for label, value in feed|get_attributes:fields %}
+                        <td>
+                            {% include "./field_value.html" with feed=feed short_format=True %}
+                        </td>
+                    {% endfor %}
+                    <td><a href="{% url 'reruns:detail' feed.id %}">Detail</a></td>
+                    <td><a href="{% url 'reruns:edit' feed.id %}">Edit</a></td>
+                    <td><a href="{% url 'reruns:delete' feed.id %}">Delete</a></td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>No feeds are available.</p>
+{% endif %}

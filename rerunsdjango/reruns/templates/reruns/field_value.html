@@ -1,0 +1,34 @@
+{% load reruns_filters %}
+{% load tz %}
+
+{% if label == "contents" %}
+    <a href="{% url 'reruns:feed' feed.id %}">feed.xml</a>
+{% elif label == "source_url"%}
+    <a href="{{ value }}">{{ value|strip_url_prefix }}</a>
+{% elif label == "interval"%}
+    {{value}} {{feed|get_attribute:"interval_unit"}}
+{% elif label == "entry_order" %}
+    {{ feed.get_entry_order_display }}
+{% elif label == "feed_type" %}
+    {{ feed.get_feed_type_display }}
+{% elif label in datetime_fields %}
+    {% if label == "next_task_run" and value|in_past %}
+        <div class="warning">
+    {% endif %}
+    {% if short_format %}
+        {% if value %}{{ value|localtime|datetime_short }}{% endif %}
+    {% else %}
+        {% if value %}{{ value|localtime|datetime_long }}{% endif %}
+    {% endif%}
+    {% if label == "next_task_run" and value %}
+        {% if value|in_past %}
+            ❌
+            <p>ERROR: scheduled task missed, next task not scheduled. Please contact the administrator.</p>
+            </div>
+        {% else %}
+        <p>({{ value|timeuntil }} remaining)</p>
+        {% endif %}
+    {% endif %}
+{% else %}
+    {{ value }} 
+{% endif %}

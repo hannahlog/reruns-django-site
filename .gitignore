@@ -7,7 +7,7 @@
 db.sqlite3
 
 # Ignore static files
-static/
+assets/
 
 # Ignore pycache
 __pycache__

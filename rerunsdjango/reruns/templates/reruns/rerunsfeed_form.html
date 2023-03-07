@@ -1,8 +1,9 @@
 {% extends "base.html" %}
-{% block title %}Edit Feed {{object.id}}{% endblock %}
+{% block title %}Add Feed{% endblock %}
 
 {% block content %}
-<form method="post">{% csrf_token %}
+<h2>Add Feed</h2>
+<form enctype="multipart/form-data" method="post">{% csrf_token %}
     {{ form.as_p }}
     <input type="submit" value="Save">
 </form>

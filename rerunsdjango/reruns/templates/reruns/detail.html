@@ -1,21 +1,31 @@
 {% extends "base.html" %}
-{% block title %}Feed Detail: {{ object.id }}{% endblock %}
+{% load reruns_filters %}
+{% load tz %}
+{% block title %}Feed Detail: “{{ object.title }}”{% endblock %}
 
 {% block content %}
-<table>
-    {% for label, value in object.get_fields %}
+{{object.task.enabled}}
+<h2>Feed Detail</h2>
+<p>
+    <a href="{% url 'reruns:edit' object.id %}">Edit</a> |
+    <a href="{% url 'reruns:delete' object.id %}">Delete</a>
+</p>
+<table class="feed-detail">
+    <thead>
         <tr>
-            <td>{{ label }}</td>
-            <td>{% if label != "contents"%}{{ value}} {% else %}<a href="feed.xml">feed</a>{% endif %}</td>
+            <th>Property</th>
+            <th>Value</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for label, value in object|get_attributes:fields %}
+        <tr>
+            <td>{{ label|verbose:meta }}</td>
+            <td>
+                {% include "./field_value.html" with feed=object short_format=False %}
+            </td>
         </tr>
     {% endfor %}
-        <tr>
-            <td>Task last run</td>
-            <td>{{ object.task.last_run_at }}</td>
-        </tr>
-        <tr>
-            <td>Task next run (estimate)</td>
-            <td>{{ object.next_task_run_estimate }}</td>
-        </tr>
+    <tbody>
 </table>
 {% endblock %}

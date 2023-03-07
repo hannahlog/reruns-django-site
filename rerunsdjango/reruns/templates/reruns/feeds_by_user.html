@@ -1,15 +1,7 @@
 {% extends "base.html" %}
-{% block title %}Feeds for user {{ username }}{% endblock %}
+{% block title %}Feeds for user {{ user.username }}{% endblock %}
 
 {% block content %}
-<h2>Feeds for user {{ username }}</h2>
-{% if feeds_by_user %}
-    <ul>
-    {% for feed in feeds_by_user %}
-        <li><a href="{% url 'reruns:detail' feed.id %}">{{ feed.source_url }}</a></li>
-    {% endfor %}
-    </ul>
-{% else %}
-    <p>This user has no feeds.</p>
-{% endif %}
+<h2>Feeds for user {{ user.username }}</h2>
+{% include "./feeds_list.html" with feeds=feeds_by_user fields=fields %}
 {% endblock %}

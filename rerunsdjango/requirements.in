@@ -1,9 +1,11 @@
 celery==5.2.7
 Django==4.1
 django-celery-beat==2.4.0
+django-debug-toolbar==3.8.1
 django-invitations==2.0.0
 django-timezone-field==5.0
 psycopg2-binary==2.9.5
+pysqlite3-binary==0.4.6
 redis==4.4.2
 supervisor==4.2.5
-rssreruns==0.0.4
+rssreruns==0.0.8

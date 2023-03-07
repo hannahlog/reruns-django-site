@@ -6,46 +6,83 @@ from django.views import generic
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse_lazy
+from django.core.exceptions import FieldDoesNotExist
 
 from .models import RerunsFeed
+from .forms import RerunsFeedAddForm, RerunsFeedUpdateForm
 
+DATETIME_FIELDS = {
+    "start_time",
+    "last_task_run",
+    "next_task_run",
+    "created"
+}
 
-class IndexView(generic.ListView):
+LISTVIEW_FIELDS = [
+    "title",
+    "contents",
+    "source_url",
+    "created",
+    "last_task_run",
+    "next_task_run",
+    "owner",
+]
+
+class VerboseMixin(object):
+    def get_context_data(self, **kwargs):
+        """."""
+        context = super(VerboseMixin, self).get_context_data(**kwargs)
+        context["meta"] = RerunsFeed._meta
+        context["datetime_fields"] = DATETIME_FIELDS
+        return context
+
+class IndexView(VerboseMixin, generic.ListView):
     template_name = 'reruns/index.html'
     context_object_name = 'latest_feeds_list'
+    fields = LISTVIEW_FIELDS
 
     def get_queryset(self):
         """Return the last added or last updated feeds."""
 
-        order_by = "-creation_date" \
-                    if (self.request.GET.get("order_by") == "created") \
-                    else "-last_updated"
+        order_by = _order_by(self.request.GET.get("order_by"))
         return RerunsFeed.objects.order_by(order_by)[:50]
 
-class UserFeedsList(generic.ListView):
+    def get_context_data(self, **kwargs):
+        """."""
+        context = super(IndexView, self).get_context_data(**kwargs)
+        context["fields"] = self.fields
+        return context
+
+class UserFeedsList(VerboseMixin, generic.ListView):
     model = RerunsFeed
     template_name = 'reruns/feeds_by_user.html'
     context_object_name = 'feeds_by_user'
 
     def get_queryset(self):
-        return RerunsFeed.objects.filter(owner=self.kwargs['pk'])
+        order_by = _order_by(self.request.GET.get("order_by"))
+        return RerunsFeed.objects \
+            .filter(owner=self.kwargs['pk']) \
+            .order_by(order_by)[:50]
 
     def get_context_data(self, **kwargs):
-        """Add the user's username as extra context."""
+        """."""
         context = super(UserFeedsList, self).get_context_data(**kwargs)
-        context['username'] = get_user_model().objects.get(pk=self.kwargs['pk'])
+        context["fields"] = LISTVIEW_FIELDS
         return context
 
-class DetailView(generic.DetailView):
+class DetailView(VerboseMixin, generic.DetailView):
     model = RerunsFeed
     template_name = 'reruns/detail.html'
     fields = [
+        "title",
+        "id",
+        "owner",
+        "created",
         "source_url",
+        "contents",
+        "feed_type",
         "interval",
-        "interval_unit",
         "entries_per_update",
-        "start_time",
-        "use_timezone",
         "title_prefix",
         "title_suffix",
         "entry_title_prefix",
@@ -53,51 +90,51 @@ class DetailView(generic.DetailView):
         "entry_order",
         "run_forever",
         "active",
+        "start_time",
+        "last_task_run",
+        "next_task_run",
+        "task_run_count",
     ]
+    def get_context_data(self, **kwargs):
+        """Add the user's username as extra context."""
+        context = super(DetailView, self).get_context_data(**kwargs)
+        context["fields"] = self.fields
+        return context
 
 class CreateView(PermissionRequiredMixin, generic.CreateView):
     permission_required = "reruns.add_rerunsfeed"
     model = RerunsFeed
-    fields = [
-        "source_url",
-        "interval",
-        "interval_unit",
-        "entries_per_update",
-        "start_time",
-        "use_timezone",
-        "title_prefix",
-        "title_suffix",
-        "entry_title_prefix",
-        "entry_title_suffix",
-        "entry_order",
-        "run_forever",
-        "active",
-    ]
+    # fields = [
+    #     "source_url",
+    #     "interval",
+    #     "interval_unit",
+    #     "entries_per_update",
+    #     "start_time",
+    #     "use_timezone",
+    #     "title_prefix",
+    #     "title_suffix",
+    #     "entry_title_prefix",
+    #     "entry_title_suffix",
+    #     "entry_order",
+    #     "run_forever",
+    #     "active",
+    # ]
+    form_class = RerunsFeedAddForm
 
     def form_valid(self, form):
-        obj = form.save(commit=False)
-        obj.owner = self.request.user
-        obj.save()
-        return HttpResponseRedirect(obj.get_absolute_url())
+        form.instance.owner = self.request.user
+        return super().form_valid(form)
+        #obj = form.save(commit=False)
+        #obj.owner = self.request.user
+        #obj.save()
+        #return HttpResponseRedirect(obj.get_absolute_url())
 
 
 class UpdateView(PermissionRequiredMixin, generic.UpdateView):
     permission_required = "reruns.update_rerunsfeed"
     model = RerunsFeed
-    fields = [
-        "interval",
-        "interval_unit",
-        "entries_per_update",
-        "start_time",
-        "use_timezone",
-        "title_prefix",
-        "title_suffix",
-        "entry_title_prefix",
-        "entry_title_suffix",
-        "entry_order",
-        "run_forever",
-        "active",
-    ]
+    template_name = 'reruns/rerunsfeed_update.html'
+    form_class = RerunsFeedUpdateForm
 
 
 class DeleteView(PermissionRequiredMixin, generic.DeleteView):
@@ -127,3 +164,11 @@ def feed(request, pk):
     feed = get_object_or_404(RerunsFeed, pk=pk)
     return HttpResponse(feed.contents, content_type='text/xml')
 
+
+def _order_by(name):
+    """"""
+    try:
+        field = RerunsFeed._meta.get_field(name)
+        return "-" + field.name
+    except FieldDoesNotExist:
+        return "-last_task_run"
