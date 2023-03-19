@@ -57,19 +57,12 @@ class RerunsFeedAddForm(forms.ModelForm):
         # }
         #widgets = {"start_time": forms.widgets.DateTimeInput}
 
-    def post(self, request, *args, **kwargs):
-        print(request)
-        super().post(request, *args, **kwargs)
+    #def post(self, request, *args, **kwargs):
+    #    print(request)
+    #    super().post(request, *args, **kwargs)
 
-    def _clean_fields(self):
-        print("JKFHFDJFKLKDSFGLKDSLGKDSG:SD:LGDSGDSGSD")
-        bf = self["start_time"]
-        print(bf)
-        field = bf.field
-        value = bf.initial if field.disabled else bf.data
-        if isinstance(value, list):
-            self["start_time"].field.data = " ".join(value)
-        super()._clean_fields()
+    #def _clean_fields(self):
+    #    super()._clean_fields()
 
     def clean(self):
         print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAa")
@@ -115,5 +108,35 @@ class RerunsFeedUpdateForm(forms.ModelForm):
             "active",
         ]
         widgets = {
-            'start_time': forms.widgets.DateTimeInput(format="%Y-%m-%d %H:%M")
+            'start_time': forms.widgets.DateTimeInput(
+                                format="%Y-%m-%d %H:%M"
+                            )
         }
+
+    def __init__(self, *args, **kwargs):
+        super(RerunsFeedUpdateForm, self).__init__(*args, **kwargs)
+        print(self.fields["start_time"].initial())
+        print(self.initial["start_time"])
+        print(self.fields["start_time"])
+        #self.fields["start_time"] = self.initial["start_time"]
+
+        print(self.fields["start_time"].initial())
+        print(self.initial["start_time"])
+        self.fields["start_time"].required = False
+        self.initial["start_time"] = None
+        #self.fields["use_timezone"].required = False
+        #self.initial["use_timezone"] = None
+
+    def save(self, commit=True):
+        print("SCREAMING")
+        update_fields=None
+        print(self.changed_data)
+        # update_fields = self.changed_data
+        if "start_time" not in self.changed_data:
+            print("BWAAAAAAAAAAAAAAAAAAAAA")
+            update_fields = set(f.name for f in self.Meta.model._meta.get_fields()) - {"start_time"}
+            print(update_fields)
+        instance = super(RerunsFeedUpdateForm, self).save(commit=False)
+        print("pls work")
+        instance.save(update_fields=update_fields)
+        return instance

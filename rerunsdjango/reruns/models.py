@@ -1,6 +1,7 @@
 # from django.contrib.auth.models import User
 from django.db import models, transaction
 from django.db.models.signals import post_save
+from django.db.models import DEFERRED
 from django.dispatch import receiver
 from django.utils import timezone
 from django.urls import reverse
@@ -70,7 +71,7 @@ class RerunsFeed(models.Model):
     interval = models.IntegerField(blank=False)
     entries_per_update = models.IntegerField(blank=False)
 
-    last_edited = models.DateTimeField(default=timezone.now)
+    last_edited = models.DateTimeField(auto_now=True)
 
     last_task_run = models.DateTimeField(
         blank=True,
@@ -87,6 +88,8 @@ class RerunsFeed(models.Model):
     task_run_count = models.BigIntegerField(default=0)
     start_time = models.DateTimeField(
         default=timezone.now,
+        blank=True,
+        null=False,
         help_text=\
             "Scheduled datetime for the feed to first be updated " \
             "(YYYY-MM-DD HH:MM, with HH in 24-hour time)"
@@ -143,8 +146,15 @@ class RerunsFeed(models.Model):
     def get_absolute_url(self):
         return reverse('reruns:detail', kwargs={'pk': self.pk})
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, update_fields=None, **kwargs):
         # TODO: REORGANIZE / REFACTOR, move validation aspects into validation
+        # (while remembering that not all calls to save() are through ModelForms,
+        # the update_feed tasks also update RerunsFeeds)
+        print("Update_fields:")
+        print(update_fields)
+        update_fields = self._update_fields_safe(update_fields)
+        print(update_fields)
+
         with transaction.atomic():
             title_kwargs = {
                 "prefix": self.title_prefix,
@@ -187,40 +197,60 @@ class RerunsFeed(models.Model):
                 period=getattr(IntervalSchedule, self.interval_unit.upper()),
             )
 
-            if not self.use_timezone:
-                self.use_timezone = self.owner.timezone
-
-            # Interpret `start_time` as being in specified timezone, *not* the server's
-            # default timezone:
-            if self.start_time.tzinfo != self.use_timezone:
-                # Convert the aware datetime to a naive datetime
-                self.start_time.replace(tzinfo=None)
-                # ...and back to aware, but with the user-specified timezone
-                self.start_time.replace(tzinfo=self.use_timezone)
-
-            # Starting datetime cannot be in the past
-            # (Offset is used just in case saving to the database is unusually slow.)
-            self.start_time = max(self.start_time, self.now_plus_offset())
 
             interval_delta = datetime.timedelta(
                 **{self.interval_unit.lower(): self.interval}
             )
 
+            defaults = {
+                "interval": schedule,
+                "task": "reruns.tasks.update_feed",
+                "kwargs": {
+                    "feed_pk": self.pk,
+                    "num_entries": self.entries_per_update,
+                }
+            }
+
+            if self.start_time:
+                # Interpret `start_time` as being in specified timezone, *not* the
+                # server's default timezone:
+                if not self.use_timezone:
+                    self.use_timezone = self.owner.timezone
+
+                if self.start_time.tzinfo != self.use_timezone:
+                    # Convert the aware datetime to a naive datetime
+                    self.start_time.replace(tzinfo=None)
+                    # ...and back to aware, but with the user-specified timezone
+                    self.start_time.replace(tzinfo=self.use_timezone)
+
+            start_time_changed = self._actually_changed("start_time", update_fields)
+            interval_changed = self._actually_changed("interval_unit", update_fields) \
+                            or self._actually_changed("interval", update_fields)
+
+            if not start_time_changed:
+                # Otherwise, load the existing value
+                # (for calculating next_task_run if applicable)
+                self.start_time = self._loaded_values["start_time"]
+
+            if start_time_changed or interval_changed:
+                # If either has been changed, the PeriodicTask's schedule will have
+                # to be updated. Same if the expected next task has been missed.
+
+                # A newly-supplied starting datetime cannot be in the past
+                # (Offset is used just in case saving to the database is
+                # unusually slow.)
+                self.start_time = max(self.start_time, self.now_plus_offset())
+
+                defaults["start_time"] = self.start_time
+
+                # The start_time will have issues without setting this. See:
+                # https://stackoverflow.com/a/57505333
+                # https://github.com/celery/django-celery-beat/issues/259
+                defaults["last_run_at"] = self.start_time - interval_delta
+
             task, new_task_created = PeriodicTask.objects.update_or_create(
-                defaults={
-                    "interval": schedule,
-                    "task": "reruns.tasks.update_feed",
-                    "start_time": self.start_time,
-                    # The start_time will have issues without setting this. See:
-                    # https://stackoverflow.com/a/57505333
-                    # https://github.com/celery/django-celery-beat/issues/259
-                    "last_run_at": self.start_time - interval_delta,
-                    "kwargs": {
-                        "feed_pk": self.pk,
-                        "num_entries": self.entries_per_update,
-                    },
-                },
-                name=f"{self.owner.username} | {self.source_url} | {self.created}",
+                defaults=defaults,
+                name=f"{self.owner.username} | {self.source_url} | {self.created}"
             )
 
             self.task = task
@@ -228,18 +258,18 @@ class RerunsFeed(models.Model):
 
             if self.active:
                 # Estimate the next upcoming run of the PeriodicTask
-                if self.start_time > timezone.now():
+                if self.start_time and (self.start_time > timezone.now()):
                      self.next_task_run = self.start_time
                 else:
-                    seconds_remaining = schedule.remaining_estimate(self.task.last_run_at)
-                    self.next_task_run = self.timezone.now() + seconds_remaining
+                    #seconds_remaining = schedule.remaining_estimate(self.task.last_run_at)
+                    #self.next_task_run = self.timezone.now() + seconds_remaining
+                    self.next_task_run = (self.task.last_run_at or self.last_task_run or self.start_time) + interval_delta
             else:
                 # If feed updates are disabled, there's no upcoming task run
                 self.next_task_run = None
 
             self.last_edited = timezone.now()
-            return super().save(*args, **kwargs)
-
+            return super().save(*args, update_fields=update_fields, **kwargs)
 
     def delete(self, *args, **kwargs):
         """Delete associated task when RerunsFeed is deleted."""
@@ -247,14 +277,72 @@ class RerunsFeed(models.Model):
             self.task.delete()
             return super(self.__class__, self).delete(*args, **kwargs)
 
-    def next_task_run_estimate(self):
-        schedule = self.task.schedule
-        seconds_remaining = schedule.remaining_estimate(self.task.last_run_at)
-        return timezone.now() + seconds_remaining
+    def _actually_changed(self, name, update_fields):
+        """Check whether a field's value has changed since being loaded from the database."""
+        return (not hasattr(self, "_loaded_values")) or (
+            (update_fields is None or name in update_fields)
+            and self.__getattribute__(name)
+            and self.__getattribute__(name) != self._loaded_values[name]
+        )
+
+    def _update_fields_safe(self, update_fields):
+        if update_fields is not None:
+            # For some fields, other fields should also be able to be updated.
+            #
+            # (Ideally, the code calling save() will list all of the fields to be
+            # updated anyway. However, if save is called with update_fields containing
+            # e.g. title_prefix but not contents, this ensures that contents is able
+            # to be updated.)
+            update_fields = set(update_fields)
+            update_fields.discard("id")
+            update_fields.add("last_edited")
+            # if self.next_task_run < timezone.now():
+            #    update_fields.add("next_task_run")
+
+            field_cliques = (
+                {
+                    "task", "start_time", "interval", "interval_unit", "use_timezone",
+                    "next_task_run"
+                },
+                {
+                    "contents",
+                    "title_prefix", "title_suffix", "title",
+                    "entry_title_prefix", "entry_title_suffix",
+                    "run_forever", "entry_order",
+                }
+            )
+            field_dependencies = {
+                "entries_per_update": {"task"},
+                "active": {"next_task_run"},
+                "last_task_run": {"task_run_count", "active", "next_task_run"}
+            }
+
+            for clique in field_cliques:
+                # Update the entire clique if any of its elements are being updated
+                if update_fields & clique:
+                    update_fields |= clique
+            for field, dependencies in field_dependencies.items():
+                # Update its dependencies if a field is being updated
+                if field in update_fields:
+                    update_fields |= dependencies
+
+        return update_fields
 
     def now_plus_offset(self):
         """The current datetime, but with a little wiggle room."""
         return timezone.now() + datetime.timedelta(minutes=2)
+
+    @classmethod
+    def from_db(cls, db, field_names, values):
+        # Recipe taken from the Django docs here:
+        # https://docs.djangoproject.com/en/4.1/ref/models/instances/#customizing-model-loading
+        instance = super().from_db(db, field_names, values)
+
+        # customization to store the original field values on the instance
+        instance._loaded_values = dict(
+            zip(field_names, (value for value in values if value is not DEFERRED))
+        )
+        return instance
 
 @receiver(post_save, sender=RerunsFeed)
 def update_task_kwargs(sender, instance, created, **kwargs):

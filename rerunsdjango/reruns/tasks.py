@@ -16,4 +16,12 @@ def update_feed(feed_pk, num_entries):
         reruns_feed.contents = fm.write(path=None)
         reruns_feed.last_task_run = timezone.now()
         reruns_feed.task_run_count += 1
-        reruns_feed.save()
+        reruns_feed.save(
+            update_fields={
+                "is_active",
+                "contents",
+                "task_run_count",
+                "last_task_run",
+                "next_task_run"
+            }
+        )
