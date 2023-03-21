@@ -2,12 +2,12 @@
 from django.db import models, transaction
 from django.db.models.signals import post_save
 from django.db.models import DEFERRED
+from django.core.validators import MinValueValidator
 from django.dispatch import receiver
 from django.utils import timezone
 from django.urls import reverse
 from django.conf import settings
 from django_celery_beat.models import IntervalSchedule, PeriodicTask
-from timezone_field import TimeZoneField
 from rssreruns.feedmodifier import FeedModifier as FM
 import datetime
 import json
@@ -21,6 +21,11 @@ CHRONOLOGICAL = "chron"
 
 RSS = "rss"
 ATOM = "atom"
+
+# The Positive[Big]Integer fields actually allow 0 (despite their name)
+strictly_positive = MinValueValidator(
+    limit_value=1, message="Please enter a positive integer (not zero)."
+)
 
 class RerunsFeed(models.Model):
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -68,8 +73,8 @@ class RerunsFeed(models.Model):
         help_text=entry_title_help_text + " Leave blank for no suffix."
     )
 
-    interval = models.IntegerField(blank=False)
-    entries_per_update = models.IntegerField(blank=False)
+    interval = models.PositiveIntegerField(blank=False, validators=[strictly_positive])
+    entries_per_update = models.PositiveIntegerField(blank=False, validators=[strictly_positive])
 
     last_edited = models.DateTimeField(auto_now=True)
 
@@ -85,7 +90,7 @@ class RerunsFeed(models.Model):
         verbose_name="Next Update (Estimate)"
     )
 
-    task_run_count = models.BigIntegerField(default=0)
+    task_run_count = models.PositiveBigIntegerField(default=0)
     start_time = models.DateTimeField(
         default=timezone.now,
         #blank=True,
@@ -93,13 +98,6 @@ class RerunsFeed(models.Model):
         help_text=\
             "Scheduled datetime for the feed to first be updated " \
             "(YYYY-MM-DD HH:MM, with HH in 24-hour time)"
-    )
-    use_timezone = TimeZoneField(
-        # choices_display="WITH_GMT_OFFSET",
-        blank=True,
-        help_text=
-            "(Timezone for the given start time. "\
-            "Leave blank to use your account's timezone setting.)"
     )
 
     ENTRY_ORDER_CHOICES = [
@@ -197,7 +195,6 @@ class RerunsFeed(models.Model):
                 period=getattr(IntervalSchedule, self.interval_unit.upper()),
             )
 
-
             interval_delta = datetime.timedelta(
                 **{self.interval_unit.lower(): self.interval}
             )
@@ -210,26 +207,6 @@ class RerunsFeed(models.Model):
                     "num_entries": self.entries_per_update,
                 }
             }
-
-            if self.start_time:
-                # Interpret `start_time` as being in specified timezone, *not* the
-                # server's default timezone:
-                print("initial (start, start.tzinfo, use_timezone):")
-                print(self.start_time)
-                print(self.start_time.tzinfo)
-                print(self.use_timezone)
-                if not self.use_timezone:
-                    self.use_timezone = self.owner.timezone
-
-                if self.start_time.tzinfo != self.use_timezone:
-                    # Convert the aware datetime to a naive datetime
-                    self.start_time.replace(tzinfo=None)
-                    # ...and back to aware, but with the user-specified timezone
-                    self.start_time.replace(tzinfo=self.use_timezone)
-                print(self.start_time)
-                print(self.start_time.tzinfo)
-                print(self.use_timezone)
-
 
             start_time_changed = self._actually_changed("start_time", update_fields)
             interval_changed = self._actually_changed("interval_unit", update_fields) \
@@ -269,8 +246,6 @@ class RerunsFeed(models.Model):
                 if self.start_time and (self.start_time > timezone.now()):
                      self.next_task_run = self.start_time
                 else:
-                    #seconds_remaining = schedule.remaining_estimate(self.task.last_run_at)
-                    #self.next_task_run = self.timezone.now() + seconds_remaining
                     self.next_task_run = (self.task.last_run_at or self.last_task_run or self.start_time) + interval_delta
             else:
                 # If feed updates are disabled, there's no upcoming task run
@@ -309,8 +284,7 @@ class RerunsFeed(models.Model):
 
             field_cliques = (
                 {
-                    "task", "start_time", "interval", "interval_unit", "use_timezone",
-                    "next_task_run"
+                    "task", "start_time", "interval", "interval_unit", "next_task_run"
                 },
                 {
                     "contents",
@@ -336,9 +310,18 @@ class RerunsFeed(models.Model):
 
         return update_fields
 
-    def now_plus_offset(self):
+    @classmethod
+    def now_plus_offset(cls):
         """The current datetime, but with a little wiggle room."""
-        return timezone.now() + datetime.timedelta(minutes=2)
+        return cls._datetime_minute_ceiling(
+            timezone.now() + datetime.timedelta(minutes=2)
+        )
+
+    @staticmethod
+    def _datetime_minute_ceiling(dt):
+        """Round a given datetime to the nearest minute >= the original datetime."""
+        minute_floor = dt.replace(second=0, microsecond=0)
+        return dt if dt == minute_floor else minute_floor + datetime.timedelta(minutes=1)
 
     @classmethod
     def from_db(cls, db, field_names, values):

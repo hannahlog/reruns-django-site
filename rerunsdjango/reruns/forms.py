@@ -36,7 +36,6 @@ class RerunsFeedAddForm(forms.ModelForm):
                 "interval_unit",
                 "entries_per_update",
                 "start_time",
-                "use_timezone",
                 "title_prefix",
                 "title_suffix",
                 "entry_title_prefix",
@@ -115,7 +114,6 @@ class RerunsFeedUpdateForm(forms.ModelForm):
             "interval_unit",
             "entries_per_update",
             "start_time",
-            "use_timezone",
             "title_prefix",
             "title_suffix",
             "entry_title_prefix",
@@ -132,17 +130,11 @@ class RerunsFeedUpdateForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(RerunsFeedUpdateForm, self).__init__(*args, **kwargs)
-        #print(self.fields["start_time"].initial())
         print(self.initial["start_time"])
         print(self.fields["start_time"])
-        #self.fields["start_time"] = self.initial["start_time"]
         print("HUH")
-        #print(self.fields["start_time"].initial())
         print(self.initial["start_time"])
-        #self.fields["start_time"].required = False
-        #self.initial["start_time"] = None
-        #self.fields["use_timezone"].required = False
-        #self.initial["use_timezone"] = None
+
 
     def save(self, commit=True):
         print("SCREAMING")

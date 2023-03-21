@@ -2,7 +2,7 @@
 {% load tz %}
 {% if feeds %}
     <p>All datetimes displayed below are in the timezone
-        {% get_current_timezone as TIME_ZONE %}{{ TIME_ZONE }}. 
+        {% get_current_timezone as TIME_ZONE %}<span class="dynamic-info">{{ TIME_ZONE }}</span>. 
         To set a different timezone, please 
         {% if not user.is_authenticated %}
             <a href="{% url 'accounts:login' %}">log in</a> and 

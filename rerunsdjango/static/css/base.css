@@ -1,7 +1,14 @@
 :root {
 	--selected-area-bg-color: rgb(48, 56, 65);
 	--main-bg-color: rgb(34, 38, 42);
+  --darker-bg-color: rgb(21, 22, 24);
 	--text-color: rgb(216, 222, 233);
+  --blue: rgb(102, 153, 204);
+  --purple: rgb(183, 148, 197);
+  --green: rgb(153, 199, 148);
+  --gold: rgb(249, 174, 88);
+  --teal: rgb(68,128,128);
+  --red: rgb(193,76,104);
 }
 
 * {
@@ -23,15 +30,15 @@ input, textarea, select {
 }
 
 a {
-	color: rgb(102, 153, 204);
+	color: var(--blue);
 }
 
 a:visited {
-	color: rgb(183, 148, 197);
+	color: var(--blue);
 }
 
 a:hover {
-	color: rgb(153, 199, 148);
+	color: var(--green);
 }
 
 th a, th a:visited {
@@ -79,20 +86,20 @@ th, td {
   overflow-wrap: anywhere;
   text-align: left;
   border-right: dashed 1px;
-  border-color: grey;
+  border-color: var(--main-bg-color);
   // display: flex;
   // justify-content: center;
   // align-items: center;
 }
 
 table.feed-list th {
-  position: relative;
+  // position: relative;
 }
 
 th {
-  /* position: sticky; */
+  position: sticky;
   top: 0;
-  background: rgb(68,128,128);
+  background: var(--teal);
   text-align: left;
   font-weight: normal;
   color: white;
@@ -107,7 +114,15 @@ th:last-child {
 
 td {
   padding-top: 2px;
-  padding-bottom: 2px;
+  padding-bottom: 8px;
+}
+
+td p {
+  margin-bottom: 0px;
+}
+
+tr:nth-child(odd) td {
+  border-color: var(--selected-area-bg-color);
 }
 
 tr:nth-child(even) td {
@@ -115,9 +130,12 @@ tr:nth-child(even) td {
 }
 
 .warning {
-  //background: rgb(44,81,32);
   font-weight: bold;
-  color: rgb(193,76,104);
+  color: var(--red);
+}
+
+.dynamic-info {
+  color: var(--gold);
 }
 
 #logout {
