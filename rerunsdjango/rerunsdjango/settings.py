@@ -155,6 +155,15 @@ DATETIME_INPUT_FORMATS = [
     "%Y-%m-%d %H:%M"
 ]
 
+# DATE_INPUT_FORMATS = [
+#     "%Y-%m-%d %H:%M"
+# ]
+
+# TIME_INPUT_FORMATS = [
+#      "%H:%M",
+#      "%H:%M %P",
+# ]
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/

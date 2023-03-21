@@ -88,7 +88,7 @@ class RerunsFeed(models.Model):
     task_run_count = models.BigIntegerField(default=0)
     start_time = models.DateTimeField(
         default=timezone.now,
-        blank=True,
+        #blank=True,
         null=False,
         help_text=\
             "Scheduled datetime for the feed to first be updated " \
@@ -214,6 +214,10 @@ class RerunsFeed(models.Model):
             if self.start_time:
                 # Interpret `start_time` as being in specified timezone, *not* the
                 # server's default timezone:
+                print("initial (start, start.tzinfo, use_timezone):")
+                print(self.start_time)
+                print(self.start_time.tzinfo)
+                print(self.use_timezone)
                 if not self.use_timezone:
                     self.use_timezone = self.owner.timezone
 
@@ -222,6 +226,10 @@ class RerunsFeed(models.Model):
                     self.start_time.replace(tzinfo=None)
                     # ...and back to aware, but with the user-specified timezone
                     self.start_time.replace(tzinfo=self.use_timezone)
+                print(self.start_time)
+                print(self.start_time.tzinfo)
+                print(self.use_timezone)
+
 
             start_time_changed = self._actually_changed("start_time", update_fields)
             interval_changed = self._actually_changed("interval_unit", update_fields) \

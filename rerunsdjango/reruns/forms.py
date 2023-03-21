@@ -4,17 +4,28 @@ from .models import RerunsFeed
 from django.core.exceptions import ValidationError
 import datetime
 from django.forms.utils import to_current_timezone
+from timezone_field import TimeZoneFormField, TimeZoneField
+from timezone_field import choices
 
-
-class WorkingSplitDateTimeField(forms.SplitDateTimeField):
-    def decompress(self, value):
-        return ' '.join(value)
-
-class WorkingSplitDateTimeWidget(forms.widgets.SplitDateTimeWidget):
-    def decompress(self, value):
-        return value
+from .widgets import SplitDateTimeTimezoneWidget
+from .fields import SplitDateTimeTimezoneField
 
 class RerunsFeedAddForm(forms.ModelForm):
+
+    start_time = SplitDateTimeTimezoneField(widget=
+        SplitDateTimeTimezoneWidget(
+            date_attrs={
+                'class': 'form-control',
+                'type': 'date',
+            },
+            time_attrs={
+                'class': 'form-control',
+                'type': 'time',
+                "time_format": "%H:%M",
+            },
+            time_format = "%H:%M",
+        ),
+    )
 
     class Meta:
         model = RerunsFeed
@@ -34,35 +45,18 @@ class RerunsFeedAddForm(forms.ModelForm):
                 "run_forever",
                 "active",
             ]
-        widgets = {
-            'start_time': forms.widgets.DateTimeInput(format="%Y-%m-%d %H:%M")
-        }
 
-        # start_date = WorkingSplitDateTimeField(widget=WorkingSplitDateTimeWidget)
-        # widgets = {
-        #     'start_time': WorkingSplitDateTimeWidget(
-        #             date_format="%Y-%m-%d",
-        #             time_format="%H:%M",
-        #             date_attrs={
-        #                 'class': 'form-control',
-        #                'placeholder': timezone.now(),
-        #                'type': 'date'
-        #             },
-        #             time_attrs={
-        #                 'class': 'form-control',
-        #                'placeholder': timezone.now(),
-        #                'type': 'time'
-        #             }
-        #     )
-        # }
-        #widgets = {"start_time": forms.widgets.DateTimeInput}
+    def __init__(self, *args, **kwargs):
+        super(RerunsFeedAddForm, self).__init__(*args, **kwargs)
 
-    #def post(self, request, *args, **kwargs):
-    #    print(request)
-    #    super().post(request, *args, **kwargs)
+        print("BING")
+        self.fields["start_time"].initial = (
+            timezone.now()
+            .astimezone(tz=timezone.get_current_timezone())
+            .replace(second=0, microsecond=0)
+        )
+        print(self.fields["start_time"].initial)
 
-    #def _clean_fields(self):
-    #    super()._clean_fields()
 
     def clean(self):
         print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAa")
@@ -91,6 +85,29 @@ class RerunsFeedAddForm(forms.ModelForm):
 
 class RerunsFeedUpdateForm(forms.ModelForm):
 
+    start_time = SplitDateTimeTimezoneField(widget=
+        SplitDateTimeTimezoneWidget(
+            date_attrs={
+                'class': 'form-control',
+                'type': 'date',
+                #"date_format": "%Y-%m-%d",
+            },
+            time_attrs={
+                'class': 'form-control',
+                #'value': timezone.localtime(timezone.now()).time().strftime("%H:%M"),
+                'type': 'time',
+                "time_format": "%H:%M",
+            },
+            timezone_attrs={
+                'class': 'form-control',
+                #'value': timezone.localtime(timezone.now()).time().strftime("%H:%M"),
+                'type': 'tzinfo',
+                "require": "False",
+                #"time_format": "%H:%M",
+            }
+        )
+    )
+
     class Meta:
         model = RerunsFeed
         fields = [
@@ -107,23 +124,23 @@ class RerunsFeedUpdateForm(forms.ModelForm):
             "run_forever",
             "active",
         ]
-        widgets = {
-            'start_time': forms.widgets.DateTimeInput(
-                                format="%Y-%m-%d %H:%M"
-                            )
-        }
+        # widgets = {
+        #     'start_time': forms.widgets.DateTimeInput(
+        #                         format="%Y-%m-%d %H:%M"
+        #                     )
+        # }
 
     def __init__(self, *args, **kwargs):
         super(RerunsFeedUpdateForm, self).__init__(*args, **kwargs)
-        print(self.fields["start_time"].initial())
+        #print(self.fields["start_time"].initial())
         print(self.initial["start_time"])
         print(self.fields["start_time"])
         #self.fields["start_time"] = self.initial["start_time"]
-
-        print(self.fields["start_time"].initial())
+        print("HUH")
+        #print(self.fields["start_time"].initial())
         print(self.initial["start_time"])
-        self.fields["start_time"].required = False
-        self.initial["start_time"] = None
+        #self.fields["start_time"].required = False
+        #self.initial["start_time"] = None
         #self.fields["use_timezone"].required = False
         #self.initial["use_timezone"] = None
 
