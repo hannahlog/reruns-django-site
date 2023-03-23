@@ -2,6 +2,7 @@
 from django.db import models, transaction
 from django.db.models.signals import post_save
 from django.db.models import DEFERRED
+from django.contrib.sites.models import Site
 from django.core.validators import MinValueValidator
 from django.dispatch import receiver
 from django.utils import timezone
@@ -164,6 +165,7 @@ class RerunsFeed(models.Model):
             }
             fm_kwargs = {
                 "run_forever": self.run_forever,
+                "initialize_all_pubdates": True,
                 "title_kwargs": title_kwargs,
                 "entry_title_kwargs": entry_title_kwargs
             }
@@ -178,6 +180,12 @@ class RerunsFeed(models.Model):
                     self.source_url = fm.source_url()
                 self.feed_type = fm.feed_type().lower()
             else:
+                absolute_feed_url = "".join([
+                    Site.objects.get_current().domain,
+                    reverse('reruns:feed', kwargs={'pk': self.pk}),
+                ])
+                fm_kwargs["overwrite_self_link"] = absolute_feed_url
+
                 # Load the already-existing feed contents
                 fm = FM.from_string(self.contents, **fm_kwargs)
 
@@ -246,7 +254,7 @@ class RerunsFeed(models.Model):
                 if self.start_time and (self.start_time > timezone.now()):
                      self.next_task_run = self.start_time
                 else:
-                    self.next_task_run = (self.task.last_run_at or self.last_task_run or self.start_time) + interval_delta
+                    self.next_task_run = (self.last_task_run or self.start_time) + interval_delta
             else:
                 # If feed updates are disabled, there's no upcoming task run
                 self.next_task_run = None

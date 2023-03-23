@@ -1,0 +1,143 @@
+:root {
+	--selected-area-bg-color: rgb(48, 56, 65);
+	--main-bg-color: rgb(34, 38, 42);
+  --darker-bg-color: rgb(21, 22, 24);
+	--text-color: rgb(216, 222, 233);
+  --blue: rgb(102, 153, 204);
+  --purple: rgb(183, 148, 197);
+  --green: rgb(153, 199, 148);
+  --gold: rgb(249, 174, 88);
+  --teal: rgb(68,128,128);
+  --red: rgb(193,76,104);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+	background-color: var(--main-bg-color);
+    color: var(--text-color);
+    font-family: Sans-Serif;
+}
+
+input, textarea, select {
+	background-color: var(--selected-area-bg-color);
+	color: var(--text-color);
+	border-style: solid;
+	border-width: 1px;
+	padding: 5px;
+}
+
+a {
+	color: var(--blue);
+}
+
+a:visited {
+	color: var(--blue);
+}
+
+a:hover {
+	color: var(--green);
+}
+
+th a, th a:visited {
+  color: white;
+  text-decoration: none;
+}
+
+th a:hover {
+  text-decoration: underline;
+}
+
+table {
+    display: grid;
+}
+
+table.feed-list {
+    grid-template-columns: 
+        minmax(200px, 1.2fr)
+        minmax(75px, 1fr)
+        minmax(75px, 1fr)
+        minmax(130px, 1.1fr)
+        minmax(130px, 1.1fr)
+        minmax(130px, 1.1fr)
+        minmax(100px, 1fr)
+        minmax(55px, 0.4fr)
+        minmax(40px, 0.4fr)
+        minmax(65px, 0.4fr);
+}
+
+table.feed-detail {
+    grid-template-columns: 
+      minmax(150px, 1fr)
+      minmax(150px, 3fr);
+}
+
+thead, tbody, tr {
+  display: contents;
+}
+
+th, td {
+  padding: 2px;
+  // overflow: hidden;
+  // text-overflow: ellipsis;
+  // white-space: nowrap;
+  overflow-wrap: anywhere;
+  text-align: left;
+  border-right: dashed 1px;
+  border-color: var(--main-bg-color);
+  // display: flex;
+  // justify-content: center;
+  // align-items: center;
+}
+
+table.feed-list th {
+  // position: relative;
+}
+
+th {
+  position: sticky;
+  top: 0;
+  background: var(--teal);
+  text-align: left;
+  font-weight: normal;
+  color: white;
+  // display: flex;
+  // justify-content: center;
+  // align-items: center;
+}
+
+th:last-child {
+  border: 0;
+}
+
+td {
+  padding-top: 2px;
+  padding-bottom: 8px;
+}
+
+td p {
+  margin-bottom: 0px;
+}
+
+tr:nth-child(odd) td {
+  border-color: var(--selected-area-bg-color);
+}
+
+tr:nth-child(even) td {
+  background: var(--selected-area-bg-color);
+}
+
+.warning {
+  font-weight: bold;
+  color: var(--red);
+}
+
+.dynamic-info {
+  color: var(--gold);
+}
+
+#logout {
+  float: right;
+}

@@ -8,4 +8,4 @@ psycopg2-binary==2.9.5
 pysqlite3-binary==0.4.6
 redis==4.4.2
 supervisor==4.2.5
-rssreruns==0.0.9
+rssreruns==0.0.10

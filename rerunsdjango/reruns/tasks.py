@@ -10,7 +10,7 @@ def update_feed(feed_pk, num_entries):
     fm = FM.from_string(reruns_feed.contents)
     with transaction.atomic():
         if fm.num_remaining() == 0:
-            reruns_feed.is_active = False
+            reruns_feed.active = False
         else:
             fm.rebroadcast(num_entries)
         reruns_feed.contents = fm.write(path=None)
@@ -18,7 +18,7 @@ def update_feed(feed_pk, num_entries):
         reruns_feed.task_run_count += 1
         reruns_feed.save(
             update_fields={
-                "is_active",
+                "active",
                 "contents",
                 "task_run_count",
                 "last_task_run",

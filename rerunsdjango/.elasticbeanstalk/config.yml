@@ -2,11 +2,15 @@ branch-defaults:
   default:
     environment: reruns-django-env
     group_suffix: null
+environment-defaults:
+  reruns-django-env:
+    branch: null
+    repository: null
 global:
   application_name: reruns-django
   branch: null
   default_ec2_keyname: EB and EC2 ssh keypair
-  default_platform: Python 3.8
+  default_platform: Python 3.8 running on 64bit Amazon Linux 2
   default_region: us-east-1
   include_git_submodules: true
   instance_profile: null

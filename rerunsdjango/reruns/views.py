@@ -162,7 +162,7 @@ class DeleteView(PermissionRequiredMixin, generic.DeleteView):
 def feed(request, pk):
     """Function-based view for accessing the feed itself (as XML)."""
     feed = get_object_or_404(RerunsFeed, pk=pk)
-    return HttpResponse(feed.contents, content_type='text/xml')
+    return HttpResponse(feed.contents, content_type='application/xml')
 
 
 def _order_by(name):
