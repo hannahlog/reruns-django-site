@@ -30,16 +30,21 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 
+IS_TESTING = 'RDS_DB_NAME' not in os.environ
+
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = IS_TESTING
 
-ALLOWED_HOSTS = [
-    "reruns-django-env.eba-kzy9sugh.us-east-1.elasticbeanstalk.com",
-    "127.0.0.1", # TESTING ONLY
-]
+if IS_TESTING:
+    ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
+else:
+    ALLOWED_HOSTS = [
+        "reruns-django-env.eba-kzy9sugh.us-east-1.elasticbeanstalk.com",
+        ".reruns-django-env.eba-kzy9sugh.us-east-1.elasticbeanstalk.com",
+        os.environ["PRIVATE_IP"],
+        os.environ["ALLOW_HOST"],
+    ]
 
-if "PRIVATE_IP" in os.environ:
-    ALLOWED_HOSTS.append(os.environ["PRIVATE_IP"])
 
 INTERNAL_IPS = [
     "127.0.0.1",
@@ -98,7 +103,7 @@ WSGI_APPLICATION = "rerunsdjango.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
-if 'RDS_DB_NAME' in os.environ:
+if not IS_TESTING:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql_psycopg2',
@@ -205,10 +210,10 @@ CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 
 # For django-invitations:
 # https://django-invitations.readthedocs.io/en/latest/installation.html
-if 'RDS_DB_NAME' in os.environ:
-    SITE_ID = 2
-else:
+if IS_TESTING:
     SITE_ID = 1
+else:
+    SITE_ID = 2
 
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"

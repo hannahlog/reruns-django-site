@@ -165,12 +165,12 @@ class RerunsFeed(models.Model):
             }
             fm_kwargs = {
                 "run_forever": self.run_forever,
-                "initialize_all_pubdates": True,
                 "title_kwargs": title_kwargs,
                 "entry_title_kwargs": entry_title_kwargs
             }
             if not self.contents:
                 # Initialize the feed, either from URL or the provided file
+                fm_kwargs["initialize_all_pubdates"] = True
                 if self.source_url:
                     fm = FM.from_url(self.source_url, **fm_kwargs)
                 elif self.source_file:
@@ -180,6 +180,7 @@ class RerunsFeed(models.Model):
                     self.source_url = fm.source_url()
                 self.feed_type = fm.feed_type().lower()
             else:
+                # Reload the existing feed
                 absolute_feed_url = "".join([
                     Site.objects.get_current().domain,
                     reverse('reruns:feed', kwargs={'pk': self.pk}),
@@ -337,10 +338,18 @@ class RerunsFeed(models.Model):
         # https://docs.djangoproject.com/en/4.1/ref/models/instances/#customizing-model-loading
         instance = super().from_db(db, field_names, values)
 
-        # customization to store the original field values on the instance
+        # (Only store original field values for particular fields whose original values
+        # are checked in `save()`)
+        to_store = {"start_time", "interval_unit", "interval"}
+
+        # Customization to store the original field values on the instance
         instance._loaded_values = dict(
+            (k,v)
+            for (k,v) in
             zip(field_names, (value for value in values if value is not DEFERRED))
+            if k in to_store
         )
+
         return instance
 
 @receiver(post_save, sender=RerunsFeed)
