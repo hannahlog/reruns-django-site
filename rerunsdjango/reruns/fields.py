@@ -13,7 +13,6 @@ from .widgets import SplitDateTimeTimezoneWidget
 class SplitDateTimeTimezoneField(forms.MultiValueField):
 
     widget = SplitDateTimeTimezoneWidget
-    # hidden_widget = SplitHiddenDateTimeWidget
     default_error_messages = {
         "invalid_date": ("Enter a valid date."),
         "invalid_time": ("Enter a valid time."),
@@ -41,14 +40,9 @@ class SplitDateTimeTimezoneField(forms.MultiValueField):
         super().__init__(fields=fields, require_all_fields=True, **kwargs)
 
     def compress(self, data_list):
-        """
-        Return a single value for the given list of values. The values can be
+        """Return a single value for the given list of values. The values can be
         assumed to be valid.
         """
-        print(data_list)
-        print(datetime.datetime.combine(
-            date=data_list[0], time=data_list[1], tzinfo=data_list[2]
-        ))
         return datetime.datetime.combine(
             date=data_list[0], time=data_list[1], tzinfo=data_list[2]
         )

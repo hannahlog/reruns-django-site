@@ -105,30 +105,11 @@ class DetailView(VerboseMixin, generic.DetailView):
 class CreateView(PermissionRequiredMixin, generic.CreateView):
     permission_required = "reruns.add_rerunsfeed"
     model = RerunsFeed
-    # fields = [
-    #     "source_url",
-    #     "interval",
-    #     "interval_unit",
-    #     "entries_per_update",
-    #     "start_time",
-    #     "use_timezone",
-    #     "title_prefix",
-    #     "title_suffix",
-    #     "entry_title_prefix",
-    #     "entry_title_suffix",
-    #     "entry_order",
-    #     "run_forever",
-    #     "active",
-    # ]
     form_class = RerunsFeedAddForm
 
     def form_valid(self, form):
         form.instance.owner = self.request.user
         return super().form_valid(form)
-        #obj = form.save(commit=False)
-        #obj.owner = self.request.user
-        #obj.save()
-        #return HttpResponseRedirect(obj.get_absolute_url())
 
 
 class UpdateView(PermissionRequiredMixin, generic.UpdateView):
@@ -164,11 +145,6 @@ def feed(request, pk):
     """Function-based view for accessing the feed itself (as XML)."""
     feed = get_object_or_404(RerunsFeed, pk=pk)
     # TODO: use nginx x-accel instead?
-    # if settings.IS_TESTING:
-    #     return HttpResponse(feed.contents, content_type='application/xml')
-    # else:
-    #     response = HttpResponse()
-    #     response['X-Sendfile'] = abspath
     with feed.source_file.open() as f:
         return HttpResponse(f.read(), content_type='application/xml')
 

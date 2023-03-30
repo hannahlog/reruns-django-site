@@ -30,7 +30,7 @@ strictly_positive = MinValueValidator(
 )
 
 def _user_directory_path(instance, filename):
-    # File will be uploaded to MEDIA_ROOT/user_<id>/<filename>
+    # File will be uploaded to MEDIA_ROOT/user_<username>/<filename>
     if hasattr(instance, "pk"):
         name = instance.pk
     else:
@@ -160,10 +160,7 @@ class RerunsFeed(models.Model):
         # TODO: REORGANIZE / REFACTOR, move validation aspects into validation
         # (while remembering that not all calls to save() are through ModelForms,
         # the update_feed tasks also update RerunsFeeds)
-        print("Update_fields:")
-        print(update_fields)
         update_fields = self._update_fields_safe(update_fields)
-        print(update_fields)
 
         with transaction.atomic():
             title_kwargs = {
@@ -211,8 +208,10 @@ class RerunsFeed(models.Model):
             self.title = fm["title"]
 
             if hasattr(self, "pk"):
+                # If the RerunsFeed has a primary key (it's not being newly created),
+                # but the current filename isn't based on the primary key, delete the
+                # current file before saving the new file.
                 pk_filename = f"user_{self.owner.username}/{self.pk}.xml"
-                print(pk_filename)
                 if self.source_file.name != pk_filename:
                     self.source_file.delete(save=False)
 
@@ -284,7 +283,6 @@ class RerunsFeed(models.Model):
                 # If feed updates are disabled, there's no upcoming task run
                 self.next_task_run = None
 
-            self.last_edited = timezone.now()
             return super().save(*args, update_fields=update_fields, **kwargs)
 
     def delete(self, *args, **kwargs):
@@ -375,7 +373,6 @@ class RerunsFeed(models.Model):
             zip(field_names, (value for value in values if value is not DEFERRED))
             if k in to_store
         )
-
         return instance
 
 @receiver(post_save, sender=RerunsFeed)

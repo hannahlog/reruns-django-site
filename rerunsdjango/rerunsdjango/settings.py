@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 from pathlib import Path
 import os
 
-# Horrific workaround to issue with Beanstalk: via
+# Horrific workaround for issue with Beanstalk: via
 # https://stackoverflow.com/questions/75037873/problem-with-sqlite-when-deploying-django-website-on-aws-cant-properly-install
 import pysqlite3
 import sys
@@ -41,8 +41,9 @@ else:
     ALLOWED_HOSTS = [
         "reruns-django-env.eba-kzy9sugh.us-east-1.elasticbeanstalk.com",
         ".reruns-django-env.eba-kzy9sugh.us-east-1.elasticbeanstalk.com",
-        os.environ["PRIVATE_IP"],
-        os.environ["ALLOW_HOST"],
+        # Manually adding IP for EB healthcheck no longer required, covered by
+        # django-ebhealthcheck:
+        # https://pypi.org/project/django-ebhealthcheck/
     ]
 
 
@@ -62,6 +63,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django_celery_beat",
     "debug_toolbar",
+    "ebhealthcheck.apps.EBHealthCheckConfig",
     "storages",
     "django.contrib.sites", # required for invitations
     "invitations",
@@ -164,15 +166,6 @@ DATETIME_INPUT_FORMATS = [
     "%Y-%m-%d %H:%M"
 ]
 
-# DATE_INPUT_FORMATS = [
-#     "%Y-%m-%d %H:%M"
-# ]
-
-# TIME_INPUT_FORMATS = [
-#      "%H:%M",
-#      "%H:%M %P",
-# ]
-
 
 # For django-invitations:
 # https://django-invitations.readthedocs.io/en/latest/installation.html
@@ -230,20 +223,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # Point Celery to Redis and the database
 CELERY_BROKER_URL = "redis://localhost:6379"
 CELERY_RESULT_BACKEND = "redis://localhost:6379"
-# db+postgresql://scott:tiger@localhost/mydatabase
-# postgresql://[user[:password]@][netloc][:port][/dbname][?param1=value1&...]
-# CELERY_RESULT_BACKEND = "".join([
-#         "db+postgresql+psycopg2://",
-#         os.environ['RDS_USERNAME'],
-#         ":",
-#         os.environ['RDS_PASSWORD'],
-#         "@",
-#         os.environ['RDS_HOSTNAME'],
-#         ":",
-#         os.environ['RDS_PORT']
-#         "/",
-#         os.environ['RDS_DB_NAME']
-# ])
 
 # Schedules will be stored in Django's own backend and show up nicely in /admin
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"

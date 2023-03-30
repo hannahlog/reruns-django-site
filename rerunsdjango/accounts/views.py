@@ -1,6 +1,4 @@
 # Taken from https://learndjango.com/tutorials/django-signup-tutorial
-# rom django.contrib.auth.forms import UserCreationForm
-# from django.contrib.auth.models import User
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.urls import reverse_lazy
 from django.views import generic

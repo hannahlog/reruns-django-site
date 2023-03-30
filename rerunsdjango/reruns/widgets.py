@@ -38,11 +38,7 @@ class SplitDateTimeTimezoneWidget(forms.MultiWidget):
         super().__init__(widgets)
 
     def decompress(self, value):
-        print(f"decompress: {value}, {type(value)}")
         if value:
-            print(timezone.get_current_timezone())
             value = value.astimezone(tz=timezone.get_current_timezone())
-            print(f"decompressed: {value}, {type(value)}")
-            print([value.date(), value.time(), value.tzinfo.key])
             return [value.date(), value.time(), value.tzinfo.key]
         return [None, None, None]
