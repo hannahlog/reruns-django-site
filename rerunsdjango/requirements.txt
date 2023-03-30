@@ -17,6 +17,12 @@ backports-zoneinfo==0.2.1
     #   django-timezone-field
 billiard==3.6.4.0
     # via celery
+boto3==1.26.99
+    # via -r requirements.in
+botocore==1.29.99
+    # via
+    #   boto3
+    #   s3transfer
 celery==5.2.7
     # via
     #   -r requirements.in
@@ -25,7 +31,7 @@ certifi==2022.12.7
     # via
     #   requests
     #   rssreruns
-charset-normalizer==3.0.1
+charset-normalizer==3.1.0
     # via
     #   requests
     #   rssreruns
@@ -47,11 +53,14 @@ django==4.1
     #   django-celery-beat
     #   django-debug-toolbar
     #   django-invitations
+    #   django-storages
 django-celery-beat==2.4.0
     # via -r requirements.in
 django-debug-toolbar==3.8.1
     # via -r requirements.in
 django-invitations==2.0.0
+    # via -r requirements.in
+django-storages==1.13.2
     # via -r requirements.in
 django-timezone-field==5.0
     # via
@@ -61,11 +70,15 @@ idna==3.4
     # via
     #   requests
     #   rssreruns
+jmespath==1.0.1
+    # via
+    #   boto3
+    #   botocore
 kombu==5.2.4
     # via celery
 lxml==4.9.2
     # via rssreruns
-prompt-toolkit==3.0.36
+prompt-toolkit==3.0.38
     # via click-repl
 psycopg2-binary==2.9.5
     # via -r requirements.in
@@ -75,9 +88,10 @@ python-crontab==2.7.1
     # via django-celery-beat
 python-dateutil==2.8.2
     # via
+    #   botocore
     #   python-crontab
     #   rssreruns
-pytz==2022.7.1
+pytz==2023.2
     # via
     #   celery
     #   django-timezone-field
@@ -87,6 +101,8 @@ requests==2.28.2
     # via rssreruns
 rssreruns==0.0.11
     # via -r requirements.in
+s3transfer==0.6.0
+    # via boto3
 six==1.16.0
     # via
     #   click-repl
@@ -98,10 +114,11 @@ sqlparse==0.4.3
     #   django-debug-toolbar
 supervisor==4.2.5
     # via -r requirements.in
-tzdata==2022.7
+tzdata==2023.2
     # via django-celery-beat
-urllib3==1.26.14
+urllib3==1.26.15
     # via
+    #   botocore
     #   requests
     #   rssreruns
 vine==5.0.0
@@ -109,7 +126,7 @@ vine==5.0.0
     #   amqp
     #   celery
     #   kombu
-wcwidth==0.1.9
+wcwidth==0.2.6
     # via prompt-toolkit
 
 # The following packages are considered to be unsafe in a requirements file:

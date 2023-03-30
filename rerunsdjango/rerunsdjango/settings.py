@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django_celery_beat",
     "debug_toolbar",
+    "storages",
     "django.contrib.sites", # required for invitations
     "invitations",
     "reruns",
@@ -173,14 +174,53 @@ DATETIME_INPUT_FORMATS = [
 # ]
 
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/4.1/howto/static-files/
-STATIC_URL = 'static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+# For django-invitations:
+# https://django-invitations.readthedocs.io/en/latest/installation.html
+if IS_TESTING:
+    SITE_ID = 1
+else:
+    SITE_ID = 2
+
+
+# Static storage via S3 bucket
+# Following along with these tutorials (and various docs)—
+# https://testdriven.io/blog/storing-django-static-and-media-files-on-amazon-s3/
+# https://www.caktusgroup.com/blog/2014/11/10/Using-Amazon-S3-to-store-your-Django-sites-static-and-media-files/
+USE_S3 = os.getenv('USE_S3') == 'TRUE'
+
+if USE_S3:
+    # AWS bucket settings
+    AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
+    AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
+    AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME')
+    AWS_DEFAULT_ACL = 'public-read'
+    AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3-website-us-east-1.amazonaws.com'
+    AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
+
+    # S3 static settings
+    AWS_LOCATION = "static"
+    STATIC_URL = f'http://{AWS_S3_CUSTOM_DOMAIN}/{AWS_LOCATION}/'
+    STATICFILES_STORAGE = 'rerunsdjango.storage_backends.StaticStorage'
+
+    # S3 media settings (used for feeds)
+    PUBLIC_MEDIA_LOCATION = "test/media" if IS_TESTING else "media"
+    MEDIA_URL = f'http://{AWS_S3_CUSTOM_DOMAIN}/{PUBLIC_MEDIA_LOCATION}/'
+    DEFAULT_FILE_STORAGE = 'rerunsdjango.storage_backends.TestPublicMediaStorage' if IS_TESTING else 'rerunsdjango.storage_backends.PublicMediaStorage'
+
+    # Load static files with 'http', not 'https'
+    AWS_S3_SECURE_URLS = False
+    AWS_S3_URL_PROTOCOL = 'http:'
+else:
+    # Local static files (CSS, JavaScript, Images)
+    # https://docs.djangoproject.com/en/4.1/howto/static-files/
+    STATIC_URL = 'static/'
+    STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+    MEDIA_URL = '/mediafiles/'
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'mediafiles')
+
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, "assets"),
 )
-
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
@@ -207,13 +247,6 @@ CELERY_RESULT_BACKEND = "redis://localhost:6379"
 
 # Schedules will be stored in Django's own backend and show up nicely in /admin
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
-
-# For django-invitations:
-# https://django-invitations.readthedocs.io/en/latest/installation.html
-if IS_TESTING:
-    SITE_ID = 1
-else:
-    SITE_ID = 2
 
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"

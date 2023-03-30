@@ -4,6 +4,7 @@ from django.db.models.signals import post_save
 from django.db.models import DEFERRED
 from django.contrib.sites.models import Site
 from django.core.validators import MinValueValidator
+from django.core.files.base import File, ContentFile
 from django.dispatch import receiver
 from django.utils import timezone
 from django.urls import reverse
@@ -28,6 +29,15 @@ strictly_positive = MinValueValidator(
     limit_value=1, message="Please enter a positive integer (not zero)."
 )
 
+def _user_directory_path(instance, filename):
+    # File will be uploaded to MEDIA_ROOT/user_<id>/<filename>
+    if hasattr(instance, "pk"):
+        name = instance.pk
+    else:
+        # Unix timestamp (as temporary filename before a primary key exists)
+        name = str(timezone.now().timestamp()).replace(".","-")
+    return f"user_{instance.owner.username}/{name}.xml"
+
 class RerunsFeed(models.Model):
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     created = models.DateTimeField(
@@ -37,7 +47,8 @@ class RerunsFeed(models.Model):
 
     # Exactly one of these is required to create a model instance
     source_url = models.URLField(max_length=200, blank=True, null=False)
-    source_file = models.FileField(blank=True, null=True)
+    source_file = models.FileField(upload_to=_user_directory_path, blank=True, null=True)
+
 
     contents = models.TextField()
     active = models.BooleanField(default=True)
@@ -168,18 +179,8 @@ class RerunsFeed(models.Model):
                 "title_kwargs": title_kwargs,
                 "entry_title_kwargs": entry_title_kwargs
             }
-            if not self.contents:
-                # Initialize the feed, either from URL or the provided file
-                fm_kwargs["initialize_all_pubdates"] = True
-                if self.source_url:
-                    fm = FM.from_url(self.source_url, **fm_kwargs)
-                elif self.source_file:
-                    file_text = self.source_file.open().read()
-                    fm = FM.from_string(file_text, **fm_kwargs)
-                    self.source_file = None
-                    self.source_url = fm.source_url()
-                self.feed_type = fm.feed_type().lower()
-            else:
+
+            if hasattr(self, "_loaded_values"):
                 # Reload the existing feed
                 absolute_feed_url = "".join([
                     Site.objects.get_current().domain,
@@ -188,15 +189,38 @@ class RerunsFeed(models.Model):
                 fm_kwargs["overwrite_self_link"] = absolute_feed_url
 
                 # Load the already-existing feed contents
-                fm = FM.from_string(self.contents, **fm_kwargs)
+                with self.source_file.open() as f:
+                    fm = FM.from_string(f.read(), **fm_kwargs)
+            else:
+                fm_kwargs["initialize_all_pubdates"] = True
+                if self.source_url:
+                    # Initialize from url
+                    fm = FM.from_url(self.source_url, **fm_kwargs)
+                    self.source_url = fm.source_url()
+                else:
+                    # Initialize from newly-uploaded file
+                    with self.source_file.open() as f:
+                        fm = FM.from_string(f.read(), **fm_kwargs)
+                self.feed_type = fm.feed_type().lower()
 
             fm["order"] = (
                 "chronological"
                 if self.entry_order == CHRONOLOGICAL
                 else "random"
             )
-            self.contents = fm.write(path=None, pretty_print=False)
             self.title = fm["title"]
+
+            if hasattr(self, "pk"):
+                pk_filename = f"user_{self.owner.username}/{self.pk}.xml"
+                print(pk_filename)
+                if self.source_file.name != pk_filename:
+                    self.source_file.delete(save=False)
+
+            self.source_file.save(
+                name="",
+                content=ContentFile(fm.write(path=None, pretty_print=False).encode("utf-8")),
+                save=False
+            )
 
             schedule, new_schedule_created = IntervalSchedule.objects.get_or_create(
                 every=self.interval,
@@ -267,6 +291,7 @@ class RerunsFeed(models.Model):
         """Delete associated task when RerunsFeed is deleted."""
         with transaction.atomic():
             self.task.delete()
+            self.source_file.delete(save=False)
             return super(self.__class__, self).delete(*args, **kwargs)
 
     def _actually_changed(self, name, update_fields):
@@ -297,6 +322,7 @@ class RerunsFeed(models.Model):
                 },
                 {
                     "contents",
+                    "source_file",
                     "title_prefix", "title_suffix", "title",
                     "entry_title_prefix", "entry_title_suffix",
                     "run_forever", "entry_order",

@@ -7,6 +7,7 @@ from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse_lazy
 from django.core.exceptions import FieldDoesNotExist
+from django.conf import settings
 
 from .models import RerunsFeed
 from .forms import RerunsFeedAddForm, RerunsFeedUpdateForm
@@ -162,7 +163,14 @@ class DeleteView(PermissionRequiredMixin, generic.DeleteView):
 def feed(request, pk):
     """Function-based view for accessing the feed itself (as XML)."""
     feed = get_object_or_404(RerunsFeed, pk=pk)
-    return HttpResponse(feed.contents, content_type='application/xml')
+    # TODO: use nginx x-accel instead?
+    # if settings.IS_TESTING:
+    #     return HttpResponse(feed.contents, content_type='application/xml')
+    # else:
+    #     response = HttpResponse()
+    #     response['X-Sendfile'] = abspath
+    with feed.source_file.open() as f:
+        return HttpResponse(f.read(), content_type='application/xml')
 
 
 def _order_by(name):
