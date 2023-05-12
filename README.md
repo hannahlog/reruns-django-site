@@ -38,6 +38,7 @@ The actual processing of RSS and Atom feed files is handled by [rss-reruns](http
 
 * Open registration is currently not enabled because I don't want to potentially deal with bots trying to register (though I do have invitations enabled.) Since the forms are not visible without being logged in, here are a few example screenshots:
 
+| Screenshot | Caption |
 | ------------- | ------------- |
 | !['Add Feed' form, with various fields](https://github.com/hannahlog/reruns-django-site/blob/main/screenshots/add_feed.png?raw=True) |  Adding a feed, giving the starting datetime in `UTC`. |
 | !['Edit Feed' form](https://github.com/hannahlog/reruns-django-site/blob/main/screenshots/add_feed.png?raw=True)  | Editing the feed once I've changed my user timezone to `US/Eastern`—the form is initialized with the prior datetime setting, but converted to `US/Eastern`.  |
