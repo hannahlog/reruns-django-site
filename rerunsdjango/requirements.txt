@@ -103,7 +103,7 @@ requests==2.28.2
     # via
     #   django-ebhealthcheck
     #   rssreruns
-rssreruns==0.0.11
+rssreruns==0.0.13
     # via -r requirements.in
 s3transfer==0.6.0
     # via boto3

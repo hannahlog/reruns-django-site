@@ -1,9 +1,14 @@
 {% load reruns_filters %}
 {% load tz %}
 
-{% if label == "contents" %}
+{% if label == "source_file" %}
     <a href="{% url 'reruns:feed' feed.id %}">feed.xml</a>
-{% elif label == "source_url"%}
+    {% if short_format %}
+        <br/><a href="{% url 'reruns:condensed_feed' feed.id %}">(condensed)</a>
+    {% endif %}
+{% elif label == "condensed_file" %}
+    <a href="{% url 'reruns:condensed_feed' feed.id %}">condensed_feed.xml</a>
+{% elif label == "source_url" %}
     <a href="{{ value }}">{{ value|strip_url_prefix }}</a>
 {% elif label == "interval"%}
     {{value}} {{feed|get_attribute:"interval_unit"}}

@@ -11,6 +11,7 @@ from django.urls import reverse
 from django.conf import settings
 from django_celery_beat.models import IntervalSchedule, PeriodicTask
 from rssreruns.feedmodifier import FeedModifier as FM
+from functools import partial
 import datetime
 import json
 
@@ -29,13 +30,14 @@ strictly_positive = MinValueValidator(
     limit_value=1, message="Please enter a positive integer (not zero)."
 )
 
-def _user_directory_path(instance, filename):
+def _user_directory_path(instance, filename, condensed):
     # File will be uploaded to MEDIA_ROOT/user_<username>/<filename>
-    if hasattr(instance, "pk"):
+    if hasattr(instance, "pk") and instance.pk is not None:
         name = instance.pk
     else:
         # Unix timestamp (as temporary filename before a primary key exists)
         name = str(timezone.now().timestamp()).replace(".","-")
+    name = "condensed_" + str(name) if condensed else name
     return f"user_{instance.owner.username}/{name}.xml"
 
 class RerunsFeed(models.Model):
@@ -47,10 +49,18 @@ class RerunsFeed(models.Model):
 
     # Exactly one of these is required to create a model instance
     source_url = models.URLField(max_length=200, blank=True, null=False)
-    source_file = models.FileField(upload_to=_user_directory_path, blank=True, null=True)
+    source_file = models.FileField(
+        upload_to=partial(_user_directory_path, condensed=False),
+        blank=True,
+        null=True,
+        verbose_name="Feed File"
+    )
+    condensed_file = models.FileField(
+        upload_to=partial(_user_directory_path, condensed=True),
+        blank=True,
+        null=True,
+    )
 
-
-    contents = models.TextField()
     active = models.BooleanField(default=True)
     title = models.CharField(max_length=200)
 
@@ -189,7 +199,7 @@ class RerunsFeed(models.Model):
                 with self.source_file.open() as f:
                     fm = FM.from_string(f.read(), **fm_kwargs)
             else:
-                fm_kwargs["initialize_all_pubdates"] = True
+                # fm_kwargs["initialize_all_pubdates"] = True
                 if self.source_url:
                     # Initialize from url
                     fm = FM.from_url(self.source_url, **fm_kwargs)
@@ -214,10 +224,21 @@ class RerunsFeed(models.Model):
                 pk_filename = f"user_{self.owner.username}/{self.pk}.xml"
                 if self.source_file.name != pk_filename:
                     self.source_file.delete(save=False)
+                # Same as above, but for the condensed version of the feed
+                pk_filename = f"user_{self.owner.username}/condensed_{self.pk}.xml"
+                if self.condensed_file.name != pk_filename:
+                    self.condensed_file.delete(save=False)
 
             self.source_file.save(
                 name="",
                 content=ContentFile(fm.write(path=None, pretty_print=False).encode("utf-8")),
+                save=False
+            )
+            self.condensed_file.save(
+                name="",
+                content=ContentFile(fm.write(
+                        path=None, with_reruns_data=False, pretty_print=False
+                    ).encode("utf-8")),
                 save=False
             )
 
@@ -319,8 +340,7 @@ class RerunsFeed(models.Model):
                     "task", "start_time", "interval", "interval_unit", "next_task_run"
                 },
                 {
-                    "contents",
-                    "source_file",
+                    "source_file", "condensed_file",
                     "title_prefix", "title_suffix", "title",
                     "entry_title_prefix", "entry_title_suffix",
                     "run_forever", "entry_order",

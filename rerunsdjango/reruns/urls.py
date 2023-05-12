@@ -11,4 +11,6 @@ urlpatterns = [
     path('<int:pk>/edit/', views.UpdateView.as_view(), name='edit'),
     path('<int:pk>/delete/', views.DeleteView.as_view(), name='delete'),
     path('<int:pk>/feed.xml', views.feed, name='feed'),
+    path('<int:pk>/condensed_feed.xml', views.condensed_feed, name='condensed_feed'),
+    path('about', views.AboutView.as_view(), name='about'),
 ]

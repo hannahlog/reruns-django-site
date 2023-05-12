@@ -21,7 +21,7 @@ DATETIME_FIELDS = {
 
 LISTVIEW_FIELDS = [
     "title",
-    "contents",
+    "source_file",
     "source_url",
     "created",
     "last_task_run",
@@ -80,7 +80,8 @@ class DetailView(VerboseMixin, generic.DetailView):
         "owner",
         "created",
         "source_url",
-        "contents",
+        "source_file",
+        "condensed_file",
         "feed_type",
         "interval",
         "entries_per_update",
@@ -148,11 +149,27 @@ def feed(request, pk):
     with feed.source_file.open() as f:
         return HttpResponse(f.read(), content_type='application/xml')
 
+def condensed_feed(request, pk):
+    """Function-based view for accessing a copy of the feed itself, but with rssreruns
+    elements omitted *and* only recently rebroadcasted entries included.
+    """
+    feed = get_object_or_404(RerunsFeed, pk=pk)
+    # TODO: use nginx x-accel instead?
+    with feed.condensed_file.open() as f:
+        return HttpResponse(f.read(), content_type='application/xml')
+
 
 def _order_by(name):
-    """"""
+    """Given a field name, returns the ordering by that field in descending order.
+
+    Defaults to last_task_run if the specified field is not found.
+    """
     try:
         field = RerunsFeed._meta.get_field(name)
         return "-" + field.name
     except FieldDoesNotExist:
         return "-last_task_run"
+
+class AboutView(generic.TemplateView):
+    """Simple About page."""
+    template_name = 'reruns/about.html'

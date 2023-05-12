@@ -181,6 +181,12 @@ else:
 # https://www.caktusgroup.com/blog/2014/11/10/Using-Amazon-S3-to-store-your-Django-sites-static-and-media-files/
 USE_S3 = os.getenv('USE_S3') == 'TRUE'
 
+if IS_TESTING:
+    # Local static files (CSS, JavaScript, Images)
+    # https://docs.djangoproject.com/en/4.1/howto/static-files/
+    STATIC_URL = 'static/'
+    STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
 if USE_S3:
     # AWS bucket settings
     AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
@@ -191,9 +197,10 @@ if USE_S3:
     AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
 
     # S3 static settings
-    AWS_LOCATION = "static"
-    STATIC_URL = f'http://{AWS_S3_CUSTOM_DOMAIN}/{AWS_LOCATION}/'
-    STATICFILES_STORAGE = 'rerunsdjango.storage_backends.StaticStorage'
+    if not IS_TESTING:
+        AWS_LOCATION = "static"
+        STATIC_URL = f'http://{AWS_S3_CUSTOM_DOMAIN}/{AWS_LOCATION}/'
+        STATICFILES_STORAGE = 'rerunsdjango.storage_backends.StaticStorage'
 
     # S3 media settings (used for feeds)
     PUBLIC_MEDIA_LOCATION = "test/media" if IS_TESTING else "media"
@@ -204,10 +211,6 @@ if USE_S3:
     AWS_S3_SECURE_URLS = False
     AWS_S3_URL_PROTOCOL = 'http:'
 else:
-    # Local static files (CSS, JavaScript, Images)
-    # https://docs.djangoproject.com/en/4.1/howto/static-files/
-    STATIC_URL = 'static/'
-    STATIC_ROOT = os.path.join(BASE_DIR, 'static')
     MEDIA_URL = '/mediafiles/'
     MEDIA_ROOT = os.path.join(BASE_DIR, 'mediafiles')
 

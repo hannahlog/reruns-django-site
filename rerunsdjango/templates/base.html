@@ -7,22 +7,21 @@
     <link rel="stylesheet" type="text/css" href="{% static 'css/base.css' %}">
     <title>RSS Reruns | {% block title %}{% endblock %}</title>
 </head>
-<body>
+<body><div id="main-wrapper">
     <div id="navbar">
         {% block navbar %}
-            Navigation: <a href="{% url 'reruns:index' %}">Reruns Feeds</a> |
+            <b>RSS Reruns 🗓️⌚📨</b> | <a href="{% url 'reruns:index' %}">Reruns Feeds</a> |
             <a href="{% url 'accounts:users' %}">Accounts</a> |
             {% if user.is_authenticated %}
                 <a href="{% url 'accounts:detail' user.pk %}">{{ user.username }}</a> |
                 <a href="{% url 'accounts:edit' user.pk %}">Settings</a> |
                 <a href="{% url 'reruns:feeds_by_user' user.pk %}">My Feeds</a> |
-                <a href="{% url 'reruns:create' %}">Add Feed</a>
-                <div id="logout">
-                    <a href="{% url 'accounts:logout' %}">Logout</a>
-                </div>
+                <a href="{% url 'reruns:create' %}">Add Feed</a> |
+                <a href="{% url 'accounts:logout' %}">Logout</a> |
             {% else %}
-                <a href="{% url 'accounts:login' %}">Login</a>
+                <a href="{% url 'accounts:login' %}">Login</a> |
             {% endif %}
+            <a href="{% url 'reruns:about' %}">About</a>
         {% endblock %}
     </div>
     <div id="content">
@@ -30,5 +29,8 @@
             {% block content %}{% endblock %}
         {% endtimezone %}
     </div>
-</body>
+    <div id="footer">
+        © Hannah Connolly {% now "Y" %}
+    </div>
+</div></body>
 </html>
